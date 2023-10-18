@@ -4,4 +4,5 @@ public enum StatusEmail {
     PROCESSING,
     SENT,
     ERROR;
+
 }

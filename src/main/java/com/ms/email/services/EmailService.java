@@ -3,7 +3,7 @@ package com.ms.email.services;
 import com.ms.email.enums.StatusEmail;
 import com.ms.email.models.EmailModel;
 import com.ms.email.repositories.EmailRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.mail.MailException;
@@ -17,18 +17,19 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class EmailService {
 
-    @Autowired
-    EmailRepository emailRepository;
-
-    @Autowired
-    private JavaMailSender emailSender;
+    private final EmailRepository emailRepository;
+    private final JavaMailSender emailSender;
 
     @Transactional
     public EmailModel sendEmail(EmailModel emailModel) {
         emailModel.setSendDateEmail(LocalDateTime.now());
-        try{
+        emailModel.setStatusEmail(StatusEmail.PROCESSING);
+        emailModel = emailRepository.save(emailModel);
+
+        try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(emailModel.getEmailFrom());
             message.setTo(emailModel.getEmailTo());
@@ -37,12 +38,13 @@ public class EmailService {
             emailSender.send(message);
 
             emailModel.setStatusEmail(StatusEmail.SENT);
-        } catch (MailException e){
+        } catch (MailException e) {
             emailModel.setStatusEmail(StatusEmail.ERROR);
-        } finally {
-            return emailRepository.save(emailModel);
         }
+
+        return emailRepository.save(emailModel);
     }
+
 
     public Page<EmailModel> findAll(Pageable pageable) {
         return  emailRepository.findAll(pageable);
@@ -51,4 +53,5 @@ public class EmailService {
     public Optional<EmailModel> findById(UUID emailId) {
         return emailRepository.findById(emailId);
     }
+
 }
